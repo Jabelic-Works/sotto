@@ -18,6 +18,9 @@ This repository currently contains the first interaction prototype:
 TranslateGemma integration is the next milestone. Until then, the prototype
 echoes the copied text so the system interaction can be tested independently.
 
+See [Development Context](docs/development-context.md) for the product and
+technical assumptions behind the prototype.
+
 ## Requirements
 
 - Apple Silicon Mac
