@@ -35,7 +35,8 @@ swift run Sotto
 
 On first use, grant Sotto access in **System Settings → Privacy & Security →
 Accessibility**. Without that permission, the panel falls back to the mouse
-pointer position.
+pointer position. The menu bar item shows the current Accessibility status and
+includes actions to request permission or open the relevant System Settings pane.
 
 For a more realistic local app run, build a `.app` bundle:
 

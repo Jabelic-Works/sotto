@@ -2,6 +2,10 @@ import AppKit
 import ApplicationServices
 
 enum SelectionLocator {
+    static var isTrusted: Bool {
+        AXIsProcessTrusted()
+    }
+
     static func requestPermission() {
         let options = [
             kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true,
@@ -9,8 +13,16 @@ enum SelectionLocator {
         AXIsProcessTrustedWithOptions(options)
     }
 
+    static func openPermissionSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else {
+            return
+        }
+
+        NSWorkspace.shared.open(url)
+    }
+
     static func selectionAnchor() -> CGPoint? {
-        guard AXIsProcessTrusted() else { return nil }
+        guard isTrusted else { return nil }
 
         let systemWide = AXUIElementCreateSystemWide()
         var focusedValue: CFTypeRef?
