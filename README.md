@@ -37,6 +37,16 @@ On first use, grant Sotto access in **System Settings → Privacy & Security →
 Accessibility**. Without that permission, the panel falls back to the mouse
 pointer position.
 
+For a more realistic local app run, build a `.app` bundle:
+
+```sh
+scripts/build-app.sh
+open .build/Sotto.app
+```
+
+This is still a Mac app running on your machine directly. No iOS Simulator or
+emulator is required.
+
 ## Test
 
 ```sh

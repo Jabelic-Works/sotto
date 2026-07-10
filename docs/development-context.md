@@ -48,16 +48,24 @@ has been narrowed to text translation first.
 Sotto is a native macOS app, not an iOS app. It should be tested on the Mac
 directly. No iOS Simulator or emulator is required.
 
-The current Swift Package prototype can run with:
+The current Swift Package prototype can run directly with:
 
 ```sh
 swift run Sotto
 ```
 
-For practical user testing, the next packaging step should be a real `.app`
-bundle with Xcode's run destination set to `My Mac`. Accessibility permission is
-easier to reason about with a stable app identity than with repeated `swift run`
-executions.
+For more practical user testing, the repository also includes a lightweight
+`.app` bundling script:
+
+```sh
+scripts/build-app.sh
+open .build/Sotto.app
+```
+
+Accessibility permission is easier to reason about with a stable app identity
+than with repeated `swift run` executions. A first-class Xcode macOS app target
+is still a useful follow-up once the prototype needs signing, entitlements,
+assets, and release packaging.
 
 ## Technical Choices
 
@@ -70,8 +78,9 @@ executions.
 
 ## Near-Term Milestones
 
-1. Convert the prototype into a proper macOS `.app` target.
-2. Improve first-run Accessibility permission guidance.
+1. Improve first-run Accessibility permission guidance.
+2. Add a first-class Xcode macOS app target when signing and release packaging
+   become necessary.
 3. Add a real translation engine implementation behind `TranslationEngine`.
 4. Evaluate TranslateGemma latency, memory use, and output quality on Apple
    Silicon.
