@@ -33,6 +33,10 @@ final class ClipboardMonitor {
         timer = nil
     }
 
+    var isRunning: Bool {
+        timer != nil
+    }
+
     private func poll() {
         guard pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount

@@ -14,6 +14,7 @@ This repository currently contains the first interaction prototype:
 - selection bounds lookup through the macOS Accessibility API
 - a lightweight floating panel near the selected text, with scroll support for
   longer text
+- menu controls for pausing/resuming the double-copy trigger
 - a replaceable translation engine boundary
 
 TranslateGemma integration is the next milestone. Until then, the prototype

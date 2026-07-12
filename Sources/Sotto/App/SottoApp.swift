@@ -4,14 +4,23 @@ import SwiftUI
 @main
 struct SottoApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var appState = AppState.shared
     @State private var accessibilityTrusted = SelectionLocator.isTrusted
 
     var body: some Scene {
         MenuBarExtra("Sotto", systemImage: "character.bubble") {
             Label(
+                appState.monitoringEnabled ? "Double-Copy: On" : "Double-Copy: Off",
+                systemImage: appState.monitoringEnabled ? "dot.radiowaves.left.and.right" : "pause.circle"
+            )
+            Label(
                 accessibilityTrusted ? "Accessibility: Allowed" : "Accessibility: Not Allowed",
                 systemImage: accessibilityTrusted ? "checkmark.circle" : "exclamationmark.triangle"
             )
+            Divider()
+            Button(appState.monitoringEnabled ? "Pause Double-Copy Trigger" : "Resume Double-Copy Trigger") {
+                appDelegate.setMonitoringEnabled(!appState.monitoringEnabled)
+            }
             Divider()
             Button("Request Accessibility Permission") {
                 appDelegate.requestAccessibilityPermission()
@@ -48,6 +57,7 @@ struct SottoApp: App {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let appState = AppState.shared
     private let panelController = TranslationPanelController()
     private let translationEngine: TranslationEngine = EchoTranslationEngine()
     private var clipboardMonitor: ClipboardMonitor?
@@ -59,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboardMonitor = ClipboardMonitor { [weak self] text in
             self?.translate(text)
         }
-        clipboardMonitor?.start()
+        setMonitoringEnabled(true)
 
         showLaunchPanel()
     }
@@ -82,11 +92,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController.hide()
     }
 
+    func setMonitoringEnabled(_ enabled: Bool) {
+        if enabled {
+            clipboardMonitor?.start()
+        } else {
+            clipboardMonitor?.stop()
+        }
+
+        appState.monitoringEnabled = clipboardMonitor?.isRunning ?? false
+    }
+
     func showLaunchPanel() {
         panelController.show(
             source: "Sotto",
             translation: "Sotto is running",
-            footer: "Select text and press Command+C twice",
+            footer: appState.monitoringEnabled
+                ? "Select text and press Command+C twice"
+                : "Double-copy trigger is paused",
             near: NSEvent.mouseLocation
         )
     }
