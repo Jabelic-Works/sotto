@@ -32,12 +32,16 @@ struct LocalServerTranslationEngine: TranslationEngine {
                 model: model,
                 messages: [
                     ChatMessage(
+                        role: "system",
+                        content: systemPrompt(targetLanguage: targetLanguage)
+                    ),
+                    ChatMessage(
                         role: "user",
                         content: prompt(source: source, targetLanguage: targetLanguage)
                     ),
                 ],
                 temperature: 0,
-                maxTokens: 512
+                maxTokens: maxTokens(for: source)
             )
         )
 
@@ -52,13 +56,14 @@ struct LocalServerTranslationEngine: TranslationEngine {
             }
 
             let decoded = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
-            guard let content = decoded.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !content.isEmpty
+            let content = decoded.choices.first?.message.content ?? ""
+            let cleanedContent = TranslationOutputCleaner.clean(content)
+            guard !cleanedContent.isEmpty
             else {
                 throw TranslationError.emptyResponse
             }
 
-            return content
+            return cleanedContent
         } catch let error as TranslationError {
             throw error
         } catch is DecodingError {
@@ -68,13 +73,64 @@ struct LocalServerTranslationEngine: TranslationEngine {
         }
     }
 
+    private func systemPrompt(targetLanguage: String) -> String {
+        """
+        You are a high-quality translation engine for a macOS reading popup.
+        Translate into natural \(targetLanguage), preserving meaning, tone, names, numbers, markdown, and line breaks.
+        Prefer fluent phrasing over literal word-for-word translation.
+        Do not add explanations, notes, alternatives, labels, quotation marks, or commentary.
+        Return only the translated text.
+        """
+    }
+
     private func prompt(source: String, targetLanguage: String) -> String {
         """
-        Translate the following text into \(targetLanguage).
-        Return only the translated text.
+        Target language: \(targetLanguage)
 
+        Text:
         \(source)
         """
+    }
+
+    private func maxTokens(for source: String) -> Int {
+        min(max(512, source.count * 2), 2048)
+    }
+}
+
+enum TranslationOutputCleaner {
+    static func clean(_ content: String) -> String {
+        var result = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prefixes = [
+            "Translation:",
+            "Translated text:",
+            "Japanese:",
+            "日本語訳:",
+            "翻訳:",
+            "訳:",
+        ]
+
+        for prefix in prefixes where result.hasLocalizedCaseInsensitivePrefix(prefix) {
+            result = String(result.dropFirst(prefix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            break
+        }
+
+        if result.count >= 2,
+           let first = result.first,
+           let last = result.last,
+           (first == "\"" && last == "\"") || (first == "“" && last == "”") || (first == "「" && last == "」")
+        {
+            result = String(result.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        return result
+    }
+}
+
+private extension String {
+    func hasLocalizedCaseInsensitivePrefix(_ prefix: String) -> Bool {
+        guard count >= prefix.count else { return false }
+        let candidate = String(self.prefix(prefix.count))
+        return candidate.localizedCaseInsensitiveCompare(prefix) == .orderedSame
     }
 }
 
