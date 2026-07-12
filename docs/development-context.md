@@ -81,7 +81,7 @@ assets, and release packaging.
 ## Near-Term Milestones
 
 1. Improve first-run Accessibility permission guidance.
-2. Upgrade to a Swift 6.1+ toolchain and add current MLX Swift LM.
+2. Add current MLX Swift LM.
 3. Implement native `NativeTranslateGemmaEngine` behind `TranslationEngine`.
 4. Add a first-class Xcode macOS app target when signing and release packaging
    become necessary.

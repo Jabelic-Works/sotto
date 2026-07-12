@@ -31,7 +31,8 @@ runtime architecture.
 
 - Apple Silicon Mac
 - macOS 14 or later
-- Xcode 15.2 or later
+- Swift 6.1.3 or later
+- Xcode 15.2 or later for the macOS SDK
 
 ## Run
 

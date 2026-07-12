@@ -18,7 +18,7 @@ enum SelectionLocator {
 
     static func requestPermission() {
         let options = [
-            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true,
+            "AXTrustedCheckOptionPrompt": true,
         ] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
     }
