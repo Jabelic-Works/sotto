@@ -32,10 +32,6 @@ struct LocalServerTranslationEngine: TranslationEngine {
                 model: model,
                 messages: [
                     ChatMessage(
-                        role: "system",
-                        content: systemPrompt(targetLanguage: targetLanguage)
-                    ),
-                    ChatMessage(
                         role: "user",
                         content: prompt(source: source, targetLanguage: targetLanguage)
                     ),
@@ -73,27 +69,27 @@ struct LocalServerTranslationEngine: TranslationEngine {
         }
     }
 
-    private func systemPrompt(targetLanguage: String) -> String {
-        """
-        You are a high-quality translation engine for a macOS reading popup.
-        Translate into natural \(targetLanguage), preserving meaning, tone, names, numbers, markdown, and line breaks.
-        Prefer fluent phrasing over literal word-for-word translation.
-        Do not add explanations, notes, alternatives, labels, quotation marks, or commentary.
-        Return only the translated text.
-        """
-    }
-
     private func prompt(source: String, targetLanguage: String) -> String {
-        """
-        Target language: \(targetLanguage)
-
-        Text:
-        \(source)
-        """
+        "<<<source>>>\(sourceLanguageCode(for: source))<<<target>>>\(targetLanguageCode(for: targetLanguage))<<<text>>>\(source)"
     }
 
     private func maxTokens(for source: String) -> Int {
         min(max(512, source.count * 2), 2048)
+    }
+
+    private func sourceLanguageCode(for source: String) -> String {
+        source.containsJapaneseText ? "ja" : "en"
+    }
+
+    private func targetLanguageCode(for targetLanguage: String) -> String {
+        switch targetLanguage.lowercased() {
+        case "japanese", "ja", "ja-jp":
+            return "ja"
+        case "english", "en", "en-us", "en-gb":
+            return "en"
+        default:
+            return targetLanguage
+        }
     }
 }
 
@@ -127,6 +123,17 @@ enum TranslationOutputCleaner {
 }
 
 private extension String {
+    var containsJapaneseText: Bool {
+        unicodeScalars.contains { scalar in
+            switch scalar.value {
+            case 0x3040...0x30FF, 0x3400...0x9FFF:
+                return true
+            default:
+                return false
+            }
+        }
+    }
+
     func hasLocalizedCaseInsensitivePrefix(_ prefix: String) -> Bool {
         guard count >= prefix.count else { return false }
         let candidate = String(self.prefix(prefix.count))

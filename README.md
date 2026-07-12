@@ -63,6 +63,10 @@ uv tool install mlx-lm
 scripts/run-translation-server.sh
 ```
 
+The server stays in the foreground and keeps the terminal occupied. After
+`Starting httpd at 127.0.0.1 on port 8000...`, no shell prompt is expected until
+you stop the server with <kbd>Control</kbd>+<kbd>C</kbd>.
+
 The model is downloaded from Hugging Face on first use. Gemma-family models may
 require accepting the model terms on Hugging Face before download.
 
