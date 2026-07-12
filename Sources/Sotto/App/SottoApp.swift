@@ -24,6 +24,10 @@ struct SottoApp: App {
                 refreshAccessibilityStatus()
             }
             Divider()
+            Button("Hide Translation") {
+                appDelegate.hideTranslation()
+            }
+            Divider()
             Button("Quit Sotto") {
                 NSApplication.shared.terminate(nil)
             }
@@ -62,6 +66,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func openAccessibilitySettings() {
         SelectionLocator.openPermissionSettings()
+    }
+
+    func hideTranslation() {
+        panelController.hide()
     }
 
     private func translate(_ source: String) {

@@ -12,7 +12,8 @@ This repository currently contains the first interaction prototype:
 - menu bar lifecycle
 - double-copy detection through the system pasteboard
 - selection bounds lookup through the macOS Accessibility API
-- a lightweight floating panel near the selected text
+- a lightweight floating panel near the selected text, with scroll support for
+  longer text
 - a replaceable translation engine boundary
 
 TranslateGemma integration is the next milestone. Until then, the prototype
