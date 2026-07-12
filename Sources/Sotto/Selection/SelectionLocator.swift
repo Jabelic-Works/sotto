@@ -120,7 +120,7 @@ enum SelectionLocator {
         }
 
         let primaryTop = NSScreen.screens[0].frame.maxY
-        return CGPoint(x: bounds.minX, y: primaryTop - bounds.maxY - 8)
+        return CGPoint(x: bounds.midX, y: primaryTop - bounds.maxY)
             .clamped(to: screen.visibleFrame)
     }
 }

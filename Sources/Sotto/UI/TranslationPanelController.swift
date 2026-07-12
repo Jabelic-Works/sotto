@@ -57,15 +57,22 @@ final class TranslationPanelController {
     }
 
     private func adjustedOrigin(near anchor: CGPoint) -> CGPoint {
-        let proposed = CGPoint(x: anchor.x, y: anchor.y - panel.frame.height)
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(anchor) }) ?? NSScreen.main else {
-            return proposed
+            return CGPoint(x: anchor.x - panel.frame.width / 2, y: anchor.y - panel.frame.height - 10)
         }
 
         let frame = screen.visibleFrame
+        let horizontalOrigin = min(
+            max(anchor.x - panel.frame.width / 2, frame.minX + 12),
+            frame.maxX - panel.frame.width - 12
+        )
+        let belowOrigin = anchor.y - panel.frame.height - 10
+        let aboveOrigin = anchor.y + 18
+        let verticalOrigin = belowOrigin >= frame.minY + 12 ? belowOrigin : aboveOrigin
+
         return CGPoint(
-            x: min(max(proposed.x, frame.minX + 12), frame.maxX - panel.frame.width - 12),
-            y: min(max(proposed.y, frame.minY + 12), frame.maxY - panel.frame.height - 12)
+            x: horizontalOrigin,
+            y: min(max(verticalOrigin, frame.minY + 12), frame.maxY - panel.frame.height - 12)
         )
     }
 }
