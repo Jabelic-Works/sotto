@@ -20,6 +20,7 @@ MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 EXECUTABLE_PATH="$REPO_ROOT/.build/$CONFIGURATION/$PRODUCT_NAME"
 
+"$REPO_ROOT/scripts/patch-mlx-swift-lm.sh"
 swift build --disable-sandbox -c "$CONFIGURATION"
 
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"

@@ -8,8 +8,22 @@ let package = Package(
     products: [
         .executable(name: "Sotto", targets: ["Sotto"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/ml-explore/mlx-swift-lm", .upToNextMinor(from: "3.31.4")),
+        .package(url: "https://github.com/huggingface/swift-huggingface", from: "0.9.0"),
+        .package(url: "https://github.com/huggingface/swift-transformers", .upToNextMinor(from: "1.3.3")),
+    ],
     targets: [
-        .executableTarget(name: "Sotto"),
+        .executableTarget(
+            name: "Sotto",
+            dependencies: [
+                .product(name: "HuggingFace", package: "swift-huggingface"),
+                .product(name: "MLXHuggingFace", package: "mlx-swift-lm"),
+                .product(name: "MLXLLM", package: "mlx-swift-lm"),
+                .product(name: "MLXLMCommon", package: "mlx-swift-lm"),
+                .product(name: "Tokenizers", package: "swift-transformers"),
+            ]
+        ),
         .testTarget(name: "SottoTests", dependencies: ["Sotto"]),
     ]
 )

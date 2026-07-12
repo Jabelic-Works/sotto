@@ -60,7 +60,7 @@ struct SottoApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState.shared
     private let panelController = TranslationPanelController()
-    private let translationEngine: TranslationEngine = LocalServerTranslationEngine()
+    private let translationEngine: TranslationEngine = NativeMLXTranslationEngine()
     private var clipboardMonitor: ClipboardMonitor?
     private var translationTask: Task<Void, Never>?
 

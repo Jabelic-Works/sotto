@@ -16,11 +16,13 @@ This repository currently contains the first interaction prototype:
   longer text
 - menu controls for pausing/resuming the double-copy trigger
 - a replaceable translation engine boundary
+- native in-process MLX Swift translation engine
 
-Translation is sent to a local OpenAI-compatible server at
-`http://127.0.0.1:8000/v1/chat/completions`. The default model id is
-`mlx-community/translategemma-4b-it-4bit_immersive-translate`. This is the
-current development fallback; the product target is native in-app MLX.
+Translation runs in-process through MLX Swift LM with the default model id
+`mlx-community/translategemma-4b-it-4bit_immersive-translate`. The model is
+downloaded from Hugging Face on first use and cached by the Hugging Face Swift
+client. Gemma-family models may require accepting the model terms on Hugging
+Face before download.
 
 See [Development Context](docs/development-context.md) for the product and
 technical assumptions behind the prototype.
@@ -37,6 +39,7 @@ runtime architecture.
 ## Run
 
 ```sh
+scripts/patch-mlx-swift-lm.sh
 swift run Sotto
 ```
 
@@ -59,8 +62,11 @@ visible.
 
 ## Local Translation Server
 
-Sotto expects a local OpenAI-compatible translation server. One development path
-is MLX LM with the MLX-converted TranslateGemma model:
+The normal app path no longer requires a user-managed local translation server.
+`LocalServerTranslationEngine` remains in the codebase as a debug fallback for
+comparing native MLX output against `mlx_lm.server`.
+
+One debug path is MLX LM with the MLX-converted TranslateGemma model:
 
 ```sh
 uv tool install mlx-lm
@@ -71,11 +77,14 @@ The server stays in the foreground and keeps the terminal occupied. After
 `Starting httpd at 127.0.0.1 on port 8000...`, no shell prompt is expected until
 you stop the server with <kbd>Control</kbd>+<kbd>C</kbd>.
 
-The model is downloaded from Hugging Face on first use. Gemma-family models may
-require accepting the model terms on Hugging Face before download.
-
 ## Test
 
 ```sh
+scripts/patch-mlx-swift-lm.sh
 swift test
 ```
+
+`mlx-swift-lm` 3.31.4 and `swift-huggingface` 0.9.0 currently need small Swift
+6.1 concurrency patches when built with this toolchain. The patch script edits
+only SwiftPM checkouts under `.build/checkouts`; remove it once upstream releases
+compatible versions.

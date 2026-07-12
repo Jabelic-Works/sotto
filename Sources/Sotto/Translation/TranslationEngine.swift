@@ -137,7 +137,7 @@ enum TranslationOutputCleaner {
     }
 }
 
-private extension String {
+extension String {
     var containsJapaneseText: Bool {
         unicodeScalars.contains { scalar in
             switch scalar.value {

@@ -28,18 +28,18 @@ The initial prototype intentionally focuses on the shell of the user experience:
 - popup placement near the selected text, with mouse-position fallback
 - replaceable translation engine boundary
 
-The translation engine currently calls a local OpenAI-compatible HTTP server at
-`http://127.0.0.1:8000/v1/chat/completions`. This is a development fallback for
-validating interaction, latency, and TranslateGemma behavior. The product target
-is a single native `.app` with MLX Swift running in-process.
+The translation engine now uses MLX Swift in-process through
+`NativeMLXTranslationEngine`. A local OpenAI-compatible HTTP server path remains
+available in `LocalServerTranslationEngine` as a debug fallback for comparing
+latency and TranslateGemma behavior.
 
 ## Model Direction
 
-TranslateGemma is the leading candidate for the local translation model.
-The current development path is the MLX-converted 4-bit model exposed through
-`mlx_lm.server`, using its OpenAI-compatible API. This is not the intended
-distribution architecture. See [Native MLX Plan](native-mlx-plan.md) for the
-single-app runtime direction.
+TranslateGemma is the leading candidate for the local translation model. The
+current native path uses
+`mlx-community/translategemma-4b-it-4bit_immersive-translate` through MLX Swift
+LM. See [Native MLX Plan](native-mlx-plan.md) for the single-app runtime
+direction and temporary dependency patch details.
 
 Whisper and speech recognition are out of scope for now. Earlier ideas included
 Whisper Large v3 Turbo or other Whisper-family models, but the product direction
@@ -81,10 +81,11 @@ assets, and release packaging.
 ## Near-Term Milestones
 
 1. Improve first-run Accessibility permission guidance.
-2. Add current MLX Swift LM.
-3. Implement native `NativeTranslateGemmaEngine` behind `TranslationEngine`.
+2. Add first-run model download progress and error states.
+3. Evaluate native TranslateGemma latency, memory use, and output quality on
+   Apple Silicon.
 4. Add a first-class Xcode macOS app target when signing and release packaging
    become necessary.
-5. Evaluate TranslateGemma latency, memory use, and output quality on Apple
-   Silicon.
-6. Add model download/location settings once the native runtime path is clear.
+5. Add model download/location settings.
+6. Replace the temporary SwiftPM checkout patch with upstream dependency
+   versions once available.
