@@ -24,6 +24,10 @@ struct SottoApp: App {
                 refreshAccessibilityStatus()
             }
             Divider()
+            Button("Show Test Popup") {
+                appDelegate.showLaunchPanel()
+            }
+            Divider()
             Button("Hide Translation") {
                 appDelegate.hideTranslation()
             }
@@ -45,7 +49,9 @@ struct SottoApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let panelController = TranslationPanelController()
+    private let translationEngine: TranslationEngine = EchoTranslationEngine()
     private var clipboardMonitor: ClipboardMonitor?
+    private var translationTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.accessory)
@@ -54,9 +60,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.translate(text)
         }
         clipboardMonitor?.start()
+
+        showLaunchPanel()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        translationTask?.cancel()
         clipboardMonitor?.stop()
     }
 
@@ -69,11 +78,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func hideTranslation() {
+        translationTask?.cancel()
         panelController.hide()
+    }
+
+    func showLaunchPanel() {
+        panelController.show(
+            source: "Sotto",
+            translation: "Sotto is running",
+            footer: "Select text and press Command+C twice",
+            near: NSEvent.mouseLocation
+        )
     }
 
     private func translate(_ source: String) {
         let anchor = SelectionLocator.selectionAnchor() ?? NSEvent.mouseLocation
-        panelController.show(source: source, translation: source, near: anchor)
+        translationTask?.cancel()
+        panelController.show(
+            source: source,
+            translation: "Translating...",
+            footer: "Preparing local translation",
+            near: anchor
+        )
+
+        let engine = translationEngine
+        translationTask = Task { [weak self] in
+            do {
+                let translation = try await engine.translate(source, targetLanguage: "Japanese")
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    self?.panelController.show(
+                        source: source,
+                        translation: translation,
+                        footer: "Echo engine placeholder",
+                        near: anchor
+                    )
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    self?.panelController.show(
+                        source: source,
+                        translation: "Translation failed",
+                        footer: error.localizedDescription,
+                        near: anchor
+                    )
+                }
+            }
+        }
     }
 }

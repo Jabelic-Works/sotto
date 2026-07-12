@@ -22,12 +22,18 @@ final class TranslationPanelController {
         panel.isReleasedWhenClosed = false
     }
 
-    func show(source: String, translation: String, near anchor: CGPoint) {
-        let size = panelSize(for: translation)
+    func show(
+        source: String,
+        translation: String,
+        footer: String = "TranslateGemma integration coming next",
+        near anchor: CGPoint
+    ) {
+        let size = panelSize(source: source, translation: translation, footer: footer)
         panel.contentView = NSHostingView(
             rootView: TranslationPanelView(
                 source: source,
                 translation: translation,
+                footer: footer,
                 size: size,
                 onClose: { [weak self] in self?.hide() }
             )
@@ -41,9 +47,11 @@ final class TranslationPanelController {
         panel.orderOut(nil)
     }
 
-    private func panelSize(for translation: String) -> CGSize {
-        let estimatedLines = max(1, ceil(CGFloat(translation.count) / 54))
-        let contentHeight = 92 + estimatedLines * 22
+    private func panelSize(source: String, translation: String, footer: String) -> CGSize {
+        let translationLines = max(1, ceil(CGFloat(translation.count) / 54))
+        let sourceLines: CGFloat = source == translation ? 0 : min(2, ceil(CGFloat(source.count) / 68))
+        let footerLines = max(1, ceil(CGFloat(footer.count) / 70))
+        let contentHeight = 92 + translationLines * 22 + sourceLines * 18 + footerLines * 16
         let height = min(max(contentHeight, 156), 320)
         return CGSize(width: panelWidth, height: height)
     }
@@ -65,6 +73,7 @@ final class TranslationPanelController {
 private struct TranslationPanelView: View {
     let source: String
     let translation: String
+    let footer: String
     let size: CGSize
     let onClose: () -> Void
 
@@ -94,7 +103,7 @@ private struct TranslationPanelView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Text("TranslateGemma integration coming next")
+            Text(footer)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

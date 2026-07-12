@@ -47,7 +47,9 @@ open .build/Sotto.app
 ```
 
 This is still a Mac app running on your machine directly. No iOS Simulator or
-emulator is required.
+emulator is required. Sotto runs as a menu bar app, so it does not open a normal
+Dock window. Development builds show a small startup popup so launch success is
+visible.
 
 ## Test
 
