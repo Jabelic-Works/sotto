@@ -1,6 +1,16 @@
 import AppKit
 import ApplicationServices
 
+struct SelectionAnchor {
+    enum Source {
+        case selection
+        case mouseFallback(reason: String)
+    }
+
+    let point: CGPoint
+    let source: Source
+}
+
 enum SelectionLocator {
     static var isTrusted: Bool {
         AXIsProcessTrusted()
@@ -22,6 +32,30 @@ enum SelectionLocator {
     }
 
     static func selectionAnchor() -> CGPoint? {
+        resolvedAnchor().point
+    }
+
+    static func resolvedAnchor() -> SelectionAnchor {
+        let fallback = NSEvent.mouseLocation
+
+        guard isTrusted else {
+            return SelectionAnchor(
+                point: fallback,
+                source: .mouseFallback(reason: "Accessibility permission is missing")
+            )
+        }
+
+        guard let selectionAnchor = selectedTextAnchor() else {
+            return SelectionAnchor(
+                point: fallback,
+                source: .mouseFallback(reason: "Selection bounds were unavailable")
+            )
+        }
+
+        return SelectionAnchor(point: selectionAnchor, source: .selection)
+    }
+
+    private static func selectedTextAnchor() -> CGPoint? {
         guard isTrusted else { return nil }
 
         let systemWide = AXUIElementCreateSystemWide()

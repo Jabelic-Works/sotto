@@ -114,13 +114,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func translate(_ source: String) {
-        let anchor = SelectionLocator.selectionAnchor() ?? NSEvent.mouseLocation
+        let anchor = SelectionLocator.resolvedAnchor()
         translationTask?.cancel()
         panelController.show(
             source: source,
             translation: "Translating...",
-            footer: "Preparing local translation",
-            near: anchor
+            footer: footer(for: anchor.source, status: "Preparing local translation"),
+            near: anchor.point
         )
 
         let engine = translationEngine
@@ -133,8 +133,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.panelController.show(
                         source: source,
                         translation: translation,
-                        footer: "Echo engine placeholder",
-                        near: anchor
+                        footer: self?.footer(for: anchor.source, status: "Echo engine placeholder")
+                            ?? "Echo engine placeholder",
+                        near: anchor.point
                     )
                 }
             } catch is CancellationError {
@@ -146,11 +147,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.panelController.show(
                         source: source,
                         translation: "Translation failed",
-                        footer: error.localizedDescription,
-                        near: anchor
+                        footer: self?.footer(for: anchor.source, status: error.localizedDescription)
+                            ?? error.localizedDescription,
+                        near: anchor.point
                     )
                 }
             }
+        }
+    }
+
+    private func footer(for source: SelectionAnchor.Source, status: String) -> String {
+        switch source {
+        case .selection:
+            return status
+        case let .mouseFallback(reason):
+            return "\(status) · Mouse fallback: \(reason)"
         }
     }
 }
