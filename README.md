@@ -19,10 +19,13 @@ This repository currently contains the first interaction prototype:
 
 Translation is sent to a local OpenAI-compatible server at
 `http://127.0.0.1:8000/v1/chat/completions`. The default model id is
-`mlx-community/translategemma-4b-it-4bit_immersive-translate`.
+`mlx-community/translategemma-4b-it-4bit_immersive-translate`. This is the
+current development fallback; the product target is native in-app MLX.
 
 See [Development Context](docs/development-context.md) for the product and
 technical assumptions behind the prototype.
+See [Native MLX Plan](docs/native-mlx-plan.md) for the intended single-app
+runtime architecture.
 
 ## Requirements
 

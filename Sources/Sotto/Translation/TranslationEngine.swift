@@ -10,6 +10,7 @@ struct EchoTranslationEngine: TranslationEngine {
     }
 }
 
+/// Development fallback while Sotto moves toward in-process MLX Swift inference.
 struct LocalServerTranslationEngine: TranslationEngine {
     private let endpoint: URL
     private let model: String
