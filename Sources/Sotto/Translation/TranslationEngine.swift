@@ -70,7 +70,11 @@ struct LocalServerTranslationEngine: TranslationEngine {
     }
 
     private func prompt(source: String, targetLanguage: String) -> String {
-        "<<<source>>>\(sourceLanguageCode(for: source))<<<target>>>\(targetLanguageCode(for: targetLanguage))<<<text>>>\(source)"
+        TranslationPromptBuilder.markerPrompt(
+            source: source,
+            sourceLanguageCode: sourceLanguageCode(for: source),
+            targetLanguageCode: targetLanguageCode(for: targetLanguage)
+        )
     }
 
     private func maxTokens(for source: String) -> Int {
@@ -84,12 +88,22 @@ struct LocalServerTranslationEngine: TranslationEngine {
     private func targetLanguageCode(for targetLanguage: String) -> String {
         switch targetLanguage.lowercased() {
         case "japanese", "ja", "ja-jp":
-            return "ja"
+            return "ja-JP"
         case "english", "en", "en-us", "en-gb":
             return "en"
         default:
             return targetLanguage
         }
+    }
+}
+
+enum TranslationPromptBuilder {
+    static func markerPrompt(
+        source: String,
+        sourceLanguageCode: String,
+        targetLanguageCode: String
+    ) -> String {
+        "<<<source>>>\(sourceLanguageCode)<<<target>>>\(targetLanguageCode)<<<text>>>\(source)"
     }
 }
 
