@@ -28,16 +28,18 @@ The initial prototype intentionally focuses on the shell of the user experience:
 - popup placement near the selected text, with mouse-position fallback
 - replaceable translation engine boundary
 
-The translation engine is currently an echo implementation. This keeps input
-capture, trigger timing, permission behavior, and popup placement testable before
-model integration adds latency and packaging complexity.
+The translation engine currently calls a local OpenAI-compatible HTTP server at
+`http://127.0.0.1:8000/v1/chat/completions`. This keeps the app shell native and
+simple while model serving can iterate independently.
 
 ## Model Direction
 
 TranslateGemma is the leading candidate for the local translation model.
-The expected path is to run a compact quantized model locally on Apple Silicon,
-likely through MLX/MLX Swift or a nearby native runtime once the app shell is
-stable enough to evaluate latency and memory behavior.
+The current development path is the MLX-converted 4-bit model exposed through
+`mlx_lm.server`, using its OpenAI-compatible API. Direct MLX Swift integration
+is still desirable later, but the current local Xcode/Swift toolchain is older
+than the latest MLX Swift LM package line, so the HTTP boundary avoids blocking
+the product loop on package compatibility.
 
 Whisper and speech recognition are out of scope for now. Earlier ideas included
 Whisper Large v3 Turbo or other Whisper-family models, but the product direction
@@ -81,7 +83,8 @@ assets, and release packaging.
 1. Improve first-run Accessibility permission guidance.
 2. Add a first-class Xcode macOS app target when signing and release packaging
    become necessary.
-3. Add a real translation engine implementation behind `TranslationEngine`.
-4. Evaluate TranslateGemma latency, memory use, and output quality on Apple
+3. Evaluate TranslateGemma latency, memory use, and output quality on Apple
    Silicon.
-5. Add model download/location settings once the runtime path is clear.
+4. Add model download/location settings once the runtime path is clear.
+5. Revisit direct MLX Swift integration when the project moves to a newer Xcode
+   and Swift toolchain.

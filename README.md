@@ -17,8 +17,9 @@ This repository currently contains the first interaction prototype:
 - menu controls for pausing/resuming the double-copy trigger
 - a replaceable translation engine boundary
 
-TranslateGemma integration is the next milestone. Until then, the prototype
-echoes the copied text so the system interaction can be tested independently.
+Translation is sent to a local OpenAI-compatible server at
+`http://127.0.0.1:8000/v1/chat/completions`. The default model id is
+`mlx-community/translategemma-4b-it-4bit_immersive-translate`.
 
 See [Development Context](docs/development-context.md) for the product and
 technical assumptions behind the prototype.
@@ -51,6 +52,19 @@ This is still a Mac app running on your machine directly. No iOS Simulator or
 emulator is required. Sotto runs as a menu bar app, so it does not open a normal
 Dock window. Development builds show a small startup popup so launch success is
 visible.
+
+## Local Translation Server
+
+Sotto expects a local OpenAI-compatible translation server. One development path
+is MLX LM with the MLX-converted TranslateGemma model:
+
+```sh
+uv tool install mlx-lm
+scripts/run-translation-server.sh
+```
+
+The model is downloaded from Hugging Face on first use. Gemma-family models may
+require accepting the model terms on Hugging Face before download.
 
 ## Test
 

@@ -59,7 +59,7 @@ struct SottoApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let appState = AppState.shared
     private let panelController = TranslationPanelController()
-    private let translationEngine: TranslationEngine = EchoTranslationEngine()
+    private let translationEngine: TranslationEngine = LocalServerTranslationEngine()
     private var clipboardMonitor: ClipboardMonitor?
     private var translationTask: Task<Void, Never>?
 
@@ -133,8 +133,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self?.panelController.show(
                         source: source,
                         translation: translation,
-                        footer: self?.footer(for: anchor.source, status: "Echo engine placeholder")
-                            ?? "Echo engine placeholder",
+                        footer: self?.footer(for: anchor.source, status: "Translated locally")
+                            ?? "Translated locally",
                         near: anchor.point
                     )
                 }
