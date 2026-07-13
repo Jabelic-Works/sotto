@@ -14,6 +14,10 @@ struct NativeMLXTranslationEngine: TranslationEngine {
         self.modelProvider = NativeMLXModelProvider(modelID: modelID)
     }
 
+    func prepare() async throws {
+        _ = try await modelProvider.container()
+    }
+
     func translate(_ source: String, targetLanguage: String) async throws -> String {
         let container = try await modelProvider.container()
         let session = ChatSession(
@@ -61,6 +65,7 @@ struct NativeMLXTranslationEngine: TranslationEngine {
 private actor NativeMLXModelProvider {
     private let modelID: String
     private var cachedContainer: ModelContainer?
+    private var loadingTask: Task<ModelContainer, Error>?
 
     init(modelID: String) {
         self.modelID = modelID
@@ -71,12 +76,28 @@ private actor NativeMLXModelProvider {
             return cachedContainer
         }
 
-        let container = try await LLMModelFactory.shared.loadContainer(
-            from: #hubDownloader(),
-            using: #huggingFaceTokenizerLoader(),
-            configuration: ModelConfiguration(id: modelID)
-        )
-        cachedContainer = container
-        return container
+        if let loadingTask {
+            return try await loadingTask.value
+        }
+
+        let modelID = modelID
+        let loadingTask = Task<ModelContainer, Error> {
+            try await LLMModelFactory.shared.loadContainer(
+                from: #hubDownloader(),
+                using: #huggingFaceTokenizerLoader(),
+                configuration: ModelConfiguration(id: modelID)
+            )
+        }
+        self.loadingTask = loadingTask
+
+        do {
+            let container = try await loadingTask.value
+            cachedContainer = container
+            self.loadingTask = nil
+            return container
+        } catch {
+            self.loadingTask = nil
+            throw error
+        }
     }
 }

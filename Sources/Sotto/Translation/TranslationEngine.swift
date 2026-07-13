@@ -1,7 +1,12 @@
 import Foundation
 
 protocol TranslationEngine: Sendable {
+    func prepare() async throws
     func translate(_ source: String, targetLanguage: String) async throws -> String
+}
+
+extension TranslationEngine {
+    func prepare() async throws {}
 }
 
 struct EchoTranslationEngine: TranslationEngine {

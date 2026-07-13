@@ -18,10 +18,15 @@ struct SottoApp: App {
                 accessibilityTrusted ? "Accessibility: Allowed" : "Accessibility: Not Allowed",
                 systemImage: accessibilityTrusted ? "checkmark.circle" : "exclamationmark.triangle"
             )
+            Label("Model: \(appState.modelLoadStatus.label)", systemImage: appState.modelLoadStatus.systemImage)
             Divider()
             Button(appState.monitoringEnabled ? "Pause Double-Copy Trigger" : "Resume Double-Copy Trigger") {
                 appDelegate.setMonitoringEnabled(!appState.monitoringEnabled)
             }
+            Button("Prepare Translation Model") {
+                appDelegate.prepareTranslationModel()
+            }
+            .disabled(!appState.modelLoadStatus.canPrepare)
             Divider()
             Button("Request Accessibility Permission") {
                 appDelegate.requestAccessibilityPermission()
@@ -62,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let panelController = TranslationPanelController()
     private let translationEngine: TranslationEngine = NativeMLXTranslationEngine()
     private var clipboardMonitor: ClipboardMonitor?
+    private var modelPreparationTask: Task<Void, Never>?
     private var translationTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -72,10 +78,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         setMonitoringEnabled(true)
 
+        prepareTranslationModel()
         showLaunchPanel()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        modelPreparationTask?.cancel()
         translationTask?.cancel()
         clipboardMonitor?.stop()
     }
@@ -93,6 +101,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController.hide()
     }
 
+    func prepareTranslationModel() {
+        modelPreparationTask?.cancel()
+        appState.modelLoadStatus = .preparing
+
+        let engine = translationEngine
+        modelPreparationTask = Task { [weak self] in
+            do {
+                try await engine.prepare()
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    self?.appState.modelLoadStatus = .ready
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    self?.appState.modelLoadStatus = .failed(error.localizedDescription)
+                }
+            }
+        }
+    }
+
     func setMonitoringEnabled(_ enabled: Bool) {
         if enabled {
             clipboardMonitor?.start()
@@ -107,9 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController.show(
             source: "Sotto",
             translation: "Sotto is running",
-            footer: appState.monitoringEnabled
-                ? "Select text and press Command+C twice"
-                : "Double-copy trigger is paused",
+            footer: launchFooter(),
             near: NSEvent.mouseLocation
         )
     }
@@ -131,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard !Task.isCancelled else { return }
 
                 await MainActor.run {
+                    self?.appState.modelLoadStatus = .ready
                     self?.panelController.show(
                         source: source,
                         translation: translation,
@@ -155,6 +187,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+    }
+
+    private func launchFooter() -> String {
+        let triggerStatus = appState.monitoringEnabled
+            ? "Select text and press Command+C twice"
+            : "Double-copy trigger is paused"
+        return "\(triggerStatus) · \(appState.modelLoadStatus.detail)"
     }
 
     private func footer(for source: SelectionAnchor.Source, status: String) -> String {

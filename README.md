@@ -20,9 +20,10 @@ This repository currently contains the first interaction prototype:
 
 Translation runs in-process through MLX Swift LM with the default model id
 `mlx-community/translategemma-4b-it-4bit_immersive-translate`. The model is
-downloaded from Hugging Face on first use and cached by the Hugging Face Swift
-client. Gemma-family models may require accepting the model terms on Hugging
-Face before download.
+prepared in the background on app launch. On first launch, Sotto downloads it
+from Hugging Face and caches it through the Hugging Face Swift client.
+Gemma-family models may require accepting the model terms on Hugging Face before
+download.
 
 See [Development Context](docs/development-context.md) for the product and
 technical assumptions behind the prototype.
@@ -58,7 +59,8 @@ open .build/Sotto.app
 This is still a Mac app running on your machine directly. No iOS Simulator or
 emulator is required. Sotto runs as a menu bar app, so it does not open a normal
 Dock window. Development builds show a small startup popup so launch success is
-visible.
+visible. The menu bar item shows model setup status and includes a retry action
+if preparation fails.
 
 ## Local Translation Server
 

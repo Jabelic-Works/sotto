@@ -81,7 +81,7 @@ assets, and release packaging.
 ## Near-Term Milestones
 
 1. Improve first-run Accessibility permission guidance.
-2. Add first-run model download progress and error states.
+2. Add detailed first-run model download progress and error states.
 3. Evaluate native TranslateGemma latency, memory use, and output quality on
    Apple Silicon.
 4. Add a first-class Xcode macOS app target when signing and release packaging

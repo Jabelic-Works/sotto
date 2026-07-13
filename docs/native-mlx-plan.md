@@ -50,10 +50,11 @@ temporary dependency workaround, not product code.
    <<<source>>>en<<<target>>>ja-JP<<<text>>>...
    ```
 
-4. Add model download progress, location, and error handling.
-5. Keep `LocalServerTranslationEngine` as a debug fallback until native quality
+4. Start model setup automatically on app launch. Done.
+5. Add detailed model download progress, location, and error handling.
+6. Keep `LocalServerTranslationEngine` as a debug fallback until native quality
    and latency are understood.
-6. Remove the SwiftPM checkout patch once upstream dependency releases include
+7. Remove the SwiftPM checkout patch once upstream dependency releases include
    Swift 6.1 fixes.
 
 ## Packaging Expectations
