@@ -1,10 +1,12 @@
 import AppKit
+import Carbon.HIToolbox
 import SwiftUI
 
 @MainActor
 final class TranslationPanelController {
     private let panelWidth: CGFloat = 440
     private let panel: NSPanel
+    private var escHotKey: EscapeHotKey?
 
     init() {
         panel = NSPanel(
@@ -41,10 +43,27 @@ final class TranslationPanelController {
         panel.setContentSize(size)
         panel.setFrameOrigin(adjustedOrigin(near: anchor))
         panel.orderFrontRegardless()
+        startEscHotKey()
     }
 
     func hide() {
+        stopEscHotKey()
         panel.orderOut(nil)
+    }
+
+    /// Closes the panel on Escape. The panel is non-activating so Sotto never
+    /// steals focus, which means it does not receive normal keyboard events, and
+    /// a global NSEvent monitor would need Accessibility/Input Monitoring
+    /// permission. A Carbon global hot key catches Escape regardless of the
+    /// active app and needs no permission. It is registered only while the panel
+    /// is visible, so Escape behaves normally otherwise.
+    private func startEscHotKey() {
+        guard escHotKey == nil else { return }
+        escHotKey = EscapeHotKey { [weak self] in self?.hide() }
+    }
+
+    private func stopEscHotKey() {
+        escHotKey = nil
     }
 
     private func panelSize(source: String, translation: String, footer: String) -> CGSize {
@@ -121,5 +140,62 @@ private struct TranslationPanelView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(.primary.opacity(0.08))
         }
+    }
+}
+
+/// A Carbon global hot key bound to the Escape key. It fires regardless of the
+/// active application and needs no Accessibility or Input Monitoring permission.
+/// The hot key lives only for the lifetime of this object, so callers register
+/// it while a panel is visible and release it to restore normal Escape behavior.
+private final class EscapeHotKey: @unchecked Sendable {
+    private var hotKeyRef: EventHotKeyRef?
+    private var handlerRef: EventHandlerRef?
+    private let onPress: @MainActor () -> Void
+
+    init(onPress: @escaping @MainActor () -> Void) {
+        self.onPress = onPress
+        install()
+    }
+
+    deinit {
+        if let hotKeyRef {
+            UnregisterEventHotKey(hotKeyRef)
+        }
+        if let handlerRef {
+            RemoveEventHandler(handlerRef)
+        }
+    }
+
+    private func install() {
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+        let context = Unmanaged.passUnretained(self).toOpaque()
+
+        InstallEventHandler(
+            GetApplicationEventTarget(),
+            { _, _, userData -> OSStatus in
+                guard let userData else { return OSStatus(eventNotHandledErr) }
+                let hotKey = Unmanaged<EscapeHotKey>.fromOpaque(userData).takeUnretainedValue()
+                MainActor.assumeIsolated { hotKey.onPress() }
+                return noErr
+            },
+            1,
+            &eventType,
+            context,
+            &handlerRef
+        )
+
+        let hotKeyID = EventHotKeyID(signature: OSType(0x53_54_54_4F), id: 1) // 'STTO'
+        let status = RegisterEventHotKey(
+            UInt32(kVK_Escape),
+            0,
+            hotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &hotKeyRef
+        )
+        assert(status == noErr, "Failed to register Escape hot key: \(status)")
     }
 }

@@ -20,6 +20,11 @@ MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
 EXECUTABLE_PATH="$REPO_ROOT/.build/$CONFIGURATION/$PRODUCT_NAME"
 
+# Terminate any running instance first. macOS `open` only reactivates an
+# already-running app instead of launching the freshly built binary, so without
+# this a rebuild appears to have no effect.
+pkill -f "$APP_DIR/Contents/MacOS/$PRODUCT_NAME" 2>/dev/null || true
+
 "$REPO_ROOT/scripts/patch-mlx-swift-lm.sh"
 swift build --disable-sandbox -c "$CONFIGURATION"
 
