@@ -4,7 +4,6 @@ import SwiftUI
 
 @MainActor
 final class TranslationPanelController {
-    private let panelWidth: CGFloat = 440
     private let panel: NSPanel
     private var escHotKey: EscapeHotKey?
 
@@ -30,7 +29,11 @@ final class TranslationPanelController {
         footer: String = "TranslateGemma integration coming next",
         near anchor: CGPoint
     ) {
-        let size = panelSize(source: source, translation: translation, footer: footer)
+        // Size and position against the same screen (the one holding the anchor)
+        // so a panel shown on a smaller secondary display is clamped to fit it
+        // rather than clamped to the main display and pushed offscreen.
+        let screen = targetScreen(for: anchor)
+        let size = panelSize(source: source, translation: translation, footer: footer, on: screen)
         panel.contentView = NSHostingView(
             rootView: TranslationPanelView(
                 source: source,
@@ -41,7 +44,7 @@ final class TranslationPanelController {
             )
         )
         panel.setContentSize(size)
-        panel.setFrameOrigin(adjustedOrigin(near: anchor))
+        panel.setFrameOrigin(adjustedOrigin(near: anchor, on: screen))
         panel.orderFrontRegardless()
         startEscHotKey()
     }
@@ -66,17 +69,73 @@ final class TranslationPanelController {
         escHotKey = nil
     }
 
-    private func panelSize(source: String, translation: String, footer: String) -> CGSize {
-        let translationLines = max(1, ceil(CGFloat(translation.count) / 54))
-        let sourceLines: CGFloat = source == translation ? 0 : min(2, ceil(CGFloat(source.count) / 68))
-        let footerLines = max(1, ceil(CGFloat(footer.count) / 70))
-        let contentHeight = 92 + translationLines * 22 + sourceLines * 18 + footerLines * 16
-        let height = min(max(contentHeight, 156), 320)
-        return CGSize(width: panelWidth, height: height)
+    /// Sizes the panel to its content: the width grows to fit the longest line
+    /// and the height to fit all text, both clamped to the given screen's visible
+    /// frame. Text beyond the clamp scrolls inside the panel.
+    private func panelSize(
+        source: String,
+        translation: String,
+        footer: String,
+        on screen: NSScreen?
+    ) -> CGSize {
+        let horizontalPadding: CGFloat = 28 // 14pt on each side
+        let verticalPadding: CGFloat = 28
+        let spacing: CGFloat = 10
+        let headerHeight: CGFloat = 26
+
+        let visible = (screen ?? NSScreen.main ?? NSScreen.screens.first)?.visibleFrame.size
+        let bounds = TranslationPanelLayout.Bounds(
+            maxWidth: min(620, (visible?.width ?? 1200) - 24),
+            maxHeight: min(560, (visible?.height ?? 800) - 24)
+        )
+
+        let bodyFont = NSFont.preferredFont(forTextStyle: .body)
+        let captionFont = NSFont.preferredFont(forTextStyle: .caption1)
+        let showsSource = source != translation
+
+        let maxContentWidth = bounds.maxWidth - horizontalPadding
+
+        // The longest natural (unwrapped) line drives the panel width.
+        let translationNaturalWidth = Self.measuredSize(translation, font: bodyFont, maxWidth: .greatestFiniteMagnitude).width
+        let sourceNaturalWidth = showsSource ? Self.measuredSize(source, font: captionFont, maxWidth: .greatestFiniteMagnitude).width : 0
+        let footerNaturalWidth = Self.measuredSize(footer, font: captionFont, maxWidth: .greatestFiniteMagnitude).width
+        let headerMinWidth: CGFloat = 150
+
+        let widestContent = max(translationNaturalWidth, sourceNaturalWidth, footerNaturalWidth, headerMinWidth)
+        let contentWidth = min(max(widestContent, TranslationPanelLayout.minSize.width - horizontalPadding), maxContentWidth)
+
+        // Wrapped heights at the resolved content width.
+        let translationHeight = Self.measuredSize(translation, font: bodyFont, maxWidth: contentWidth).height
+        let sourceHeight = showsSource ? Self.measuredSize(source, font: captionFont, maxWidth: contentWidth).height + spacing : 0
+        let footerHeight = Self.measuredSize(footer, font: captionFont, maxWidth: contentWidth).height
+
+        let contentHeight = verticalPadding + headerHeight + spacing
+            + sourceHeight + translationHeight + spacing + footerHeight
+
+        return TranslationPanelLayout.clamp(
+            width: contentWidth + horizontalPadding,
+            height: contentHeight,
+            in: bounds
+        )
     }
 
-    private func adjustedOrigin(near anchor: CGPoint) -> CGPoint {
-        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(anchor) }) ?? NSScreen.main else {
+    private static func measuredSize(_ text: String, font: NSFont, maxWidth: CGFloat) -> CGSize {
+        guard !text.isEmpty else { return .zero }
+        let attributed = NSAttributedString(string: text, attributes: [.font: font])
+        let rect = attributed.boundingRect(
+            with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading]
+        )
+        return CGSize(width: ceil(rect.width), height: ceil(rect.height))
+    }
+
+    /// The screen that contains the anchor, falling back to the main screen.
+    private func targetScreen(for anchor: CGPoint) -> NSScreen? {
+        NSScreen.screens.first(where: { $0.frame.contains(anchor) }) ?? NSScreen.main
+    }
+
+    private func adjustedOrigin(near anchor: CGPoint, on screen: NSScreen?) -> CGPoint {
+        guard let screen else {
             return CGPoint(x: anchor.x - panel.frame.width / 2, y: anchor.y - panel.frame.height - 10)
         }
 
@@ -92,6 +151,24 @@ final class TranslationPanelController {
         return CGPoint(
             x: horizontalOrigin,
             y: min(max(verticalOrigin, frame.minY + 12), frame.maxY - panel.frame.height - 12)
+        )
+    }
+}
+
+/// Pure sizing math for the translation panel, kept separate from AppKit text
+/// measurement so it can be unit tested.
+enum TranslationPanelLayout {
+    static let minSize = CGSize(width: 320, height: 140)
+
+    struct Bounds {
+        let maxWidth: CGFloat
+        let maxHeight: CGFloat
+    }
+
+    static func clamp(width: CGFloat, height: CGFloat, in bounds: Bounds) -> CGSize {
+        CGSize(
+            width: min(max(width, minSize.width), max(bounds.maxWidth, minSize.width)),
+            height: min(max(height, minSize.height), max(bounds.maxHeight, minSize.height))
         )
     }
 }
@@ -115,18 +192,19 @@ private struct TranslationPanelView: View {
                 .buttonStyle(.plain)
             }
 
-            if source != translation {
-                Text(source)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-
             ScrollView {
-                Text(translation)
-                    .font(.body)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 8) {
+                    if source != translation {
+                        Text(source)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(translation)
+                        .font(.body)
+                        .textSelection(.enabled)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Text(footer)
