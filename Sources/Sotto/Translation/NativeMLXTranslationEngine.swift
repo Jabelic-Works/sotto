@@ -28,10 +28,11 @@ struct NativeMLXTranslationEngine: TranslationEngine {
             )
         )
 
+        let route = TranslationRoute.resolve(source: source, preferredTarget: targetLanguage)
         let prompt = TranslationPromptBuilder.markerPrompt(
             source: source,
-            sourceLanguageCode: sourceLanguageCode(for: source),
-            targetLanguageCode: targetLanguageCode(for: targetLanguage)
+            sourceLanguageCode: route.sourceCode,
+            targetLanguageCode: route.targetCode
         )
         let content = try await session.respond(to: prompt)
         let cleanedContent = TranslationOutputCleaner.clean(content)
@@ -43,22 +44,9 @@ struct NativeMLXTranslationEngine: TranslationEngine {
     }
 
     private func maxTokens(for source: String) -> Int {
-        min(max(512, source.count * 2), 2048)
-    }
-
-    private func sourceLanguageCode(for source: String) -> String {
-        source.containsJapaneseText ? "ja" : "en"
-    }
-
-    private func targetLanguageCode(for targetLanguage: String) -> String {
-        switch targetLanguage.lowercased() {
-        case "japanese", "ja", "ja-jp":
-            return "ja-JP"
-        case "english", "en", "en-us", "en-gb":
-            return "en"
-        default:
-            return targetLanguage
-        }
+        // Translation output length tracks input length; keep a generous ceiling
+        // so longer selections are not truncated mid-sentence.
+        min(max(512, source.count * 2), 4096)
     }
 }
 
