@@ -76,30 +76,16 @@ struct LocalServerTranslationEngine: TranslationEngine {
     }
 
     private func prompt(source: String, targetLanguage: String) -> String {
-        TranslationPromptBuilder.markerPrompt(
+        let route = TranslationRoute.resolve(source: source, preferredTarget: targetLanguage)
+        return TranslationPromptBuilder.markerPrompt(
             source: source,
-            sourceLanguageCode: sourceLanguageCode(for: source),
-            targetLanguageCode: targetLanguageCode(for: targetLanguage)
+            sourceLanguageCode: route.sourceCode,
+            targetLanguageCode: route.targetCode
         )
     }
 
     private func maxTokens(for source: String) -> Int {
-        min(max(512, source.count * 2), 2048)
-    }
-
-    private func sourceLanguageCode(for source: String) -> String {
-        source.containsJapaneseText ? "ja" : "en"
-    }
-
-    private func targetLanguageCode(for targetLanguage: String) -> String {
-        switch targetLanguage.lowercased() {
-        case "japanese", "ja", "ja-jp":
-            return "ja-JP"
-        case "english", "en", "en-us", "en-gb":
-            return "en"
-        default:
-            return targetLanguage
-        }
+        min(max(512, source.count * 2), 4096)
     }
 }
 
@@ -110,6 +96,44 @@ enum TranslationPromptBuilder {
         targetLanguageCode: String
     ) -> String {
         "<<<source>>>\(sourceLanguageCode)<<<target>>>\(targetLanguageCode)<<<text>>>\(source)"
+    }
+}
+
+/// Resolves the source/target language codes for a translation.
+///
+/// The double-copy trigger has no explicit direction, so Sotto infers it from
+/// the selected text. The caller supplies a preferred target language (the
+/// reader's own language); when the selection already appears to be in that
+/// language, the direction is flipped so the model performs a real translation
+/// instead of paraphrasing the text back into the same language.
+enum TranslationRoute {
+    static func resolve(
+        source: String,
+        preferredTarget: String
+    ) -> (sourceCode: String, targetCode: String) {
+        let sourceCode = source.containsJapaneseText ? "ja" : "en"
+        let preferredCode = targetCode(for: preferredTarget)
+
+        // Avoid same-language "translation" (e.g. selecting Japanese while the
+        // preferred target is also Japanese): flip to the other language.
+        if sourceCode == "ja", preferredCode.hasPrefix("ja") {
+            return ("ja", "en")
+        }
+        if sourceCode == "en", preferredCode == "en" {
+            return ("en", "ja-JP")
+        }
+        return (sourceCode, preferredCode)
+    }
+
+    static func targetCode(for language: String) -> String {
+        switch language.lowercased() {
+        case "japanese", "ja", "ja-jp", "ja_jp":
+            return "ja-JP"
+        case "english", "en", "en-us", "en-gb":
+            return "en"
+        default:
+            return language
+        }
     }
 }
 

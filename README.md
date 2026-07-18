@@ -41,8 +41,16 @@ runtime architecture.
 
 ```sh
 scripts/patch-mlx-swift-lm.sh
+swift build
+scripts/build-metallib.sh
 swift run Sotto
 ```
+
+`scripts/build-metallib.sh` compiles the MLX Metal shader library. SwiftPM on the
+command line cannot build Metal shaders, so without this step the app aborts at
+launch with `Failed to load the default metallib` and the menu bar item never
+appears. See [Development Context](docs/development-context.md) for details. The
+`.app` build below runs this step automatically.
 
 On first use, grant Sotto access in **System Settings → Privacy & Security →
 Accessibility**. Without that permission, the panel falls back to the mouse
