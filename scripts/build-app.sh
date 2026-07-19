@@ -31,14 +31,35 @@ swift build --disable-sandbox -c "$CONFIGURATION"
 # SwiftPM cannot compile Metal shaders, so build the MLX metallib separately.
 CONFIGURATION="$CONFIGURATION" "$REPO_ROOT/scripts/build-metallib.sh"
 
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
+# Start from a clean bundle so stale binaries/metallibs never linger.
+rm -rf "$MACOS_DIR" "$FRAMEWORKS_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 cp "$EXECUTABLE_PATH" "$MACOS_DIR/$PRODUCT_NAME"
-# MLX loads `mlx.metallib` colocated with the executable (Contents/MacOS).
+# MLX loads `mlx.metallib` colocated with the executable (Contents/MacOS). It is
+# a Mach-O, so the whole bundle must be signed with `--deep` (below) to seal it
+# as nested code; otherwise the bundle signature is invalid.
 cp "$(dirname "$EXECUTABLE_PATH")/mlx.metallib" "$MACOS_DIR/mlx.metallib"
 cp "$REPO_ROOT/packaging/macos/Info.plist" "$CONTENTS_DIR/Info.plist"
 
-if command -v codesign >/dev/null 2>&1; then
-  codesign --force --sign - "$APP_DIR" >/dev/null
+# Embed Sparkle.framework (for in-app updates) and let the executable find it.
+SPARKLE_FRAMEWORK="$REPO_ROOT/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+if [[ -d "$SPARKLE_FRAMEWORK" ]]; then
+  rm -rf "$FRAMEWORKS_DIR/Sparkle.framework"
+  cp -R "$SPARKLE_FRAMEWORK" "$FRAMEWORKS_DIR/Sparkle.framework"
+  if ! otool -l "$MACOS_DIR/$PRODUCT_NAME" | grep -q "@executable_path/../Frameworks"; then
+    install_name_tool -add_rpath "@executable_path/../Frameworks" "$MACOS_DIR/$PRODUCT_NAME"
+  fi
 fi
+
+if ! command -v codesign >/dev/null 2>&1; then
+  echo "codesign not found; cannot sign the app bundle." >&2
+  exit 1
+fi
+# Ad-hoc sign the whole bundle (incl. the embedded Sparkle framework and the
+# metallib) after the rpath edit. --deep is acceptable here because there are no
+# entitlements or hardened runtime to apply; it seals every nested item. A
+# signing failure must abort so we never ship a broken bundle.
+codesign --force --deep --sign - "$APP_DIR"
 
 echo "$APP_DIR"

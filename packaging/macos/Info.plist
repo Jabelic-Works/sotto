@@ -26,5 +26,11 @@
 	<string>Copyright © 2026 Jabelic Works</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/Jabelic-Works/sotto/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>+KS7YLgfSbVZUnZXALvA0JFyNOj5eUJFWZjrrilj07w=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
 </dict>
 </plist>
