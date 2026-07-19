@@ -180,9 +180,11 @@ private struct TranslationPanelView: View {
     let size: CGSize
     let onClose: () -> Void
 
+    @State private var didCopy = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            HStack(spacing: 12) {
                 Label("Sotto", systemImage: "character.bubble")
                     .font(.headline)
                 Spacer()
@@ -190,6 +192,7 @@ private struct TranslationPanelView: View {
                     Image(systemName: "xmark")
                 }
                 .buttonStyle(.plain)
+                .help("Close")
             }
 
             ScrollView {
@@ -207,9 +210,19 @@ private struct TranslationPanelView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Text(footer)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Text(footer)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button(action: copyTranslation) {
+                    Image(systemName: didCopy ? "checkmark" : "doc.on.doc")
+                        .foregroundStyle(didCopy ? Color.green : Color.primary)
+                }
+                .buttonStyle(.plain)
+                .help("Copy translation")
+                .accessibilityLabel(didCopy ? "Copied" : "Copy translation")
+            }
         }
         .padding(14)
         .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -218,6 +231,21 @@ private struct TranslationPanelView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(.primary.opacity(0.08))
         }
+        .task(id: didCopy) {
+            guard didCopy else { return }
+            try? await Task.sleep(for: .seconds(1.5))
+            didCopy = false
+        }
+    }
+
+    /// Copies the translation to the general pasteboard. A single write does not
+    /// re-trigger the double-copy monitor, which requires the same text twice in
+    /// quick succession.
+    private func copyTranslation() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(translation, forType: .string)
+        didCopy = true
     }
 }
 
