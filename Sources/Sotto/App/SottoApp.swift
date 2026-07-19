@@ -6,6 +6,7 @@ import SwiftUI
 struct SottoApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var appState = AppState.shared
+    @StateObject private var updater = UpdaterController.shared
     @State private var accessibilityTrusted = SelectionLocator.isTrusted
 
     var body: some Scene {
@@ -47,6 +48,10 @@ struct SottoApp: App {
                 appDelegate.hideTranslation()
             }
             Divider()
+            Button("Check for Updates…") {
+                updater.checkForUpdates()
+            }
+            .disabled(!updater.canCheckForUpdates)
             Button("Quit Sotto") {
                 NSApplication.shared.terminate(nil)
             }
