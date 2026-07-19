@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Sotto</title>
+        <item>
+            <title>0.2.0</title>
+            <pubDate>Mon, 20 Jul 2026 03:50:29 +0900</pubDate>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/Jabelic-Works/sotto/releases/download/v0.2.0/Sotto-0.2.0-arm64.zip" length="11575045" type="application/octet-stream" sparkle:edSignature="ae3Q1RTiC7Jpxp+uhUCJSPWksFhEw3O3Rs65qeAOORz4Kho1RvJIGVONU2DXTv8mbnfRybItx0GJSlOZ37FLAw=="/>
+        </item>
+    </channel>
+</rss>
