@@ -29,9 +29,8 @@ struct NativeMLXTranslationEngine: TranslationEngine {
         )
 
         let route = TranslationRoute.resolve(source: source, preferredTarget: targetLanguage)
-        let prompt = TranslationPromptBuilder.markerPrompt(
+        let prompt = TranslationPromptBuilder.naturalPrompt(
             source: source,
-            sourceLanguageCode: route.sourceCode,
             targetLanguageCode: route.targetCode
         )
         let content = try await session.respond(to: prompt)

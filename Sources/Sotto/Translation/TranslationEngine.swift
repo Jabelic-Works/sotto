@@ -77,9 +77,8 @@ struct LocalServerTranslationEngine: TranslationEngine {
 
     private func prompt(source: String, targetLanguage: String) -> String {
         let route = TranslationRoute.resolve(source: source, preferredTarget: targetLanguage)
-        return TranslationPromptBuilder.markerPrompt(
+        return TranslationPromptBuilder.naturalPrompt(
             source: source,
-            sourceLanguageCode: route.sourceCode,
             targetLanguageCode: route.targetCode
         )
     }
@@ -90,12 +89,34 @@ struct LocalServerTranslationEngine: TranslationEngine {
 }
 
 enum TranslationPromptBuilder {
-    static func markerPrompt(
+    /// Builds a natural-translation instruction rather than TranslateGemma's
+    /// terse `<<<source>>>…` marker format. The marker format triggers a fixed
+    /// "professional translator" instruction that tends to translate literally;
+    /// an explicit "translate naturally, not word-for-word" instruction produces
+    /// noticeably more idiomatic output. The model reads this through its chat
+    /// template's plain-text path (no markers).
+    ///
+    /// Instructions are kept short on purpose: elaborate style guidance makes
+    /// this 4-bit model unreliable (it starts emitting stray tokens), so the
+    /// wording only nudges toward natural, non-literal phrasing.
+    static func naturalPrompt(
         source: String,
-        sourceLanguageCode: String,
         targetLanguageCode: String
     ) -> String {
-        "<<<source>>>\(sourceLanguageCode)<<<target>>>\(targetLanguageCode)<<<text>>>\(source)"
+        let instruction: String
+        if targetLanguageCode.hasPrefix("ja") {
+            instruction = "プロの翻訳者として、次の文章を日本語に翻訳してください。"
+                + "逐語訳を避け、日本語として自然で読みやすい表現にしてください。"
+                + "原文の意味は保ち、訳文だけを出力してください。"
+        } else if targetLanguageCode.hasPrefix("en") {
+            instruction = "As a professional translator, translate the following text into natural, "
+                + "fluent English. Avoid word-for-word translation, preserve the original meaning, "
+                + "and output only the translation."
+        } else {
+            instruction = "Translate the following text into \(targetLanguageCode) naturally and "
+                + "fluently. Avoid word-for-word translation and output only the translation."
+        }
+        return "\(instruction)\n\n\(source)"
     }
 }
 
