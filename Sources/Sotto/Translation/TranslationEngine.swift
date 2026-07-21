@@ -116,7 +116,26 @@ enum TranslationPromptBuilder {
             instruction = "Translate the following text into \(targetLanguageCode) naturally and "
                 + "fluently. Avoid word-for-word translation and output only the translation."
         }
-        return "\(instruction)\n\n\(source)"
+        return "\(instruction)\n\n\(neutralizeMarkers(source))"
+    }
+
+    /// Breaks TranslateGemma's literal marker tokens in the source text. The
+    /// model's chat template switches into its `<<<source>>>` marker parser if
+    /// that token appears anywhere in the message, then crashes when the
+    /// following `<<<target>>>`/`<<<text>>>` tokens are absent. Inserting a
+    /// zero-width space keeps the text visually identical for the reader while
+    /// stopping source that happens to contain the tokens (e.g. docs about the
+    /// marker format) from triggering — and breaking — marker mode.
+    private static func neutralizeMarkers(_ source: String) -> String {
+        let zeroWidthSpace = "\u{200B}"
+        var result = source
+        for token in ["<<<source>>>", "<<<target>>>", "<<<text>>>"] {
+            result = result.replacingOccurrences(
+                of: token,
+                with: "<<<\(zeroWidthSpace)\(token.dropFirst(3))"
+            )
+        }
+        return result
     }
 }
 

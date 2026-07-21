@@ -26,4 +26,19 @@ final class TranslationPromptBuilderTests: XCTestCase {
         let prompt = TranslationPromptBuilder.naturalPrompt(source: "Hi", targetLanguageCode: "ja-JP")
         XCTAssertFalse(prompt.contains("<<<source>>>"), "must not fall back to the literal marker format")
     }
+
+    func testNeutralizesMarkerTokensInSource() {
+        // Source that itself contains the marker tokens must not survive intact,
+        // or the model's chat template enters (and crashes in) marker mode.
+        let prompt = TranslationPromptBuilder.naturalPrompt(
+            source: "The format uses <<<source>>> and <<<target>>> and <<<text>>> markers.",
+            targetLanguageCode: "ja-JP"
+        )
+        XCTAssertFalse(prompt.contains("<<<source>>>"))
+        XCTAssertFalse(prompt.contains("<<<target>>>"))
+        XCTAssertFalse(prompt.contains("<<<text>>>"))
+        // The words remain (only the literal delimiter run is broken).
+        XCTAssertTrue(prompt.contains("source"))
+        XCTAssertTrue(prompt.contains("markers"))
+    }
 }
