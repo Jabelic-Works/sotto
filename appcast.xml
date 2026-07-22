@@ -3,13 +3,13 @@
     <channel>
         <title>Sotto</title>
         <item>
-            <title>0.2.0</title>
-            <pubDate>Mon, 20 Jul 2026 03:50:29 +0900</pubDate>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <title>0.3.0</title>
+            <pubDate>Wed, 22 Jul 2026 10:05:49 +0900</pubDate>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/Jabelic-Works/sotto/releases/download/v0.2.0/Sotto-0.2.0-arm64.zip" length="11575045" type="application/octet-stream" sparkle:edSignature="ae3Q1RTiC7Jpxp+uhUCJSPWksFhEw3O3Rs65qeAOORz4Kho1RvJIGVONU2DXTv8mbnfRybItx0GJSlOZ37FLAw=="/>
+            <enclosure url="https://github.com/Jabelic-Works/sotto/releases/download/v0.3.0/Sotto-0.3.0-arm64.zip" length="11575802" type="application/octet-stream" sparkle:edSignature="gzlQucrKlm6hGPVk2upDuNYhNBB0u4c5yxtS3+r/L2CBUjAg1Zy8AL45ij1zHl7PNu3LHo9SFhjFYVq9sFo7AQ=="/>
         </item>
     </channel>
 </rss>
