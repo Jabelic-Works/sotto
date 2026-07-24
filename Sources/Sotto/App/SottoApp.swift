@@ -11,6 +11,8 @@ struct SottoApp: App {
 
     var body: some Scene {
         MenuBarExtra("Sotto", systemImage: "character.bubble") {
+            Text("Sotto \(AppVersion.current)")
+            Divider()
             Label(
                 appState.monitoringEnabled ? "Double-Copy: On" : "Double-Copy: Off",
                 systemImage: appState.monitoringEnabled ? "dot.radiowaves.left.and.right" : "pause.circle"
